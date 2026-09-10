@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege by default; jobs opt in to more where they need it.
+permissions: {}
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Formatting, vet and tests, matching what `make check` runs locally.
+      - name: Check
+        run: make check
+
+      - name: Build
+        run: make build
+
+  self-lint:
+    name: Lint this repository
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Dogfooding: the linter reports on its own repository. GITHUB_TOKEN
+      # cannot read admin-only settings, so those checks report as skipped
+      # rather than failing, and --fail-on none keeps the run informational.
+      - name: Self-lint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          go run . --repo "$GITHUB_REPOSITORY" --fail-on none --format markdown \
+            >> "$GITHUB_STEP_SUMMARY"
