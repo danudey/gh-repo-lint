@@ -3,7 +3,7 @@ module github.com/danudey/gh-repo-lint
 go 1.26.7
 
 require (
-	github.com/cli/go-gh/v2 v2.16.0
+	github.com/cli/go-gh/v2 v2.16.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
